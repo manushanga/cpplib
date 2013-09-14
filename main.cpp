@@ -6,7 +6,7 @@ using namespace std;
 int main()
 {
 
-    std::edge_list<int,int> sa,kk;
+    std::edge_list<int,int> sa(6),kk(6);
     sa.add_edge(0,1,4);
     sa.add_edge(1,2,4);
     sa.add_edge(1,4,2);
@@ -20,14 +20,16 @@ int main()
     FOREACH (i,kk){
         cout<<i->a<<" "<<i->b<<endl;
     }
+    std::cout<<"shortest paths"<<endl;
+
     std::adj_list<int,int> ad(sa);
-    ad.add_edge(0,5,0);
-    cout<<ad.is_edge(0,2)<<endl;
-    cout<<ad.is_edge(1,2)<<endl;
-    FOREACH(i,ad)
+    std::vector<int> dd,ff;
+    ad.bellmanford_shortest_path(0,dd,ff);
+    FORI(i,0,dd.size())
     {
-        cout<<(i->find(5)!=i->end())<<endl;
+        std::cout<<"0 to "<<i<<" "<<dd[i]<<std::endl;
     }
+
     cout<<std::setprecision(100)<<from_string<float>("56.6605513",10)<<endl;
     std::vector<std::string> ss;
     split("  asdfa sdf\na\tg","\t\r\n ",ss);

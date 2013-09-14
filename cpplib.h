@@ -9,9 +9,11 @@
 #include <sstream>
 #include <cmath>
 #include <list>
+#include <limits>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <stdexcept>
 // Madura A.
 // C++ Utilities
 
@@ -20,6 +22,14 @@
 #endif
 
 /** General foreach for STL like containers */
+#define FORI(x,i,j) \
+    for(int x=i;x<j;x++)
+
+#define FORUI(x,i,j) \
+    for(unsigned int x=i;x<j;x++)
+
+#define FORSZ(x,i,j) \
+    for(size_t x=i;x<j;x++)
 
 #define FOREACH(var, container) \
     for(typeof((container).begin()) var = (container).begin(); \
@@ -96,9 +106,9 @@ TO from_string(std::string number, TO base)
     return (TO)0;
 }
 /** Graph structures and algorithms **/
-/*  NOTE: It is assumed that IDX_T and WGT_T are numeric primitives, like
-    int, long, size_t ..etc do not use float/double or any non-numeric type
-*/
+/*  NOTE: IDX_T can be int,long ..etc
+    WGT_T can be int,long,float ..etc
+ */
 
 template<typename IDX_T, typename WGT_T>
 struct edge{
@@ -145,12 +155,14 @@ public:
                 this->at( *i )=al;
             }
             al->splice(al->end(),*bl);
+            delete bl;
         } else {
 
             FOREACH(i,*al) {
                 this->at( *i )=bl;
             }
             bl->splice(bl->end(),*al);
+            delete al;
         }
 
         FOREACH(i,*this){
@@ -162,15 +174,33 @@ public:
         }
         cout<<endl;
     }
+    ~set_list()
+    {
+        set<list <IDX_T> *> f;
+        FOREACH(i,*this){
+            f.insert(*i);
+        }
+        FOREACH(i, f){
+            delete *i;
+        }
+    }
 };
 template<typename IDX_T, typename WGT_T>
 class edge_list : public vector< edge< IDX_T, WGT_T > >
 {
+private:
+    IDX_T vertex_count;
 public:
-    edge_list() : vector< edge< IDX_T, WGT_T > >() {}
+    edge_list(IDX_T verts) : vector< edge< IDX_T, WGT_T > >()
+    {
+        vertex_count = verts;
+    }
     void add_edge(IDX_T a, IDX_T b, WGT_T w)
     {
         this->push_back(edge<IDX_T, WGT_T>(a,b,w));
+    }
+    inline IDX_T get_vertex_count(){
+        return vertex_count;
     }
     void mst(edge_list< IDX_T, WGT_T >& mst){
         set_list<IDX_T> sl(this->size());
@@ -191,7 +221,7 @@ class adj_list : public vector< map<IDX_T,WGT_T> >
 public:
     adj_list(edge_list<IDX_T, WGT_T>& edgelist) : vector< map<IDX_T,WGT_T> > ()
     {
-        this->resize(edgelist.size());
+        this->resize(edgelist.get_vertex_count());
         FOREACH(i,edgelist) {
             add_edge(i->a, i->b, i->w);
         }
@@ -200,14 +230,53 @@ public:
     {
         this->resize(vertices);
     }
+    inline WGT_T get_weight(IDX_T a, IDX_T b)
+    {
+        return this->at(a).find(a)->second;
+    }
     void add_edge(IDX_T a, IDX_T b, WGT_T w)
     {
         this->at(a).insert(pair<IDX_T,WGT_T>(b,w));
     }
-    bool is_edge(IDX_T a, IDX_T b)
+    bool has_edge(IDX_T a, IDX_T b)
     {
         map<IDX_T,WGT_T>& tt=this->at(a);
         return tt.find(b)!=tt.end();
+    }
+    void bellmanford_shortest_path(IDX_T src,
+                                   vector<IDX_T>& dist,
+                                   vector<IDX_T>& pred)
+    {
+        dist.resize(this->size());
+        pred.resize(this->size());
+        FORI(i,0,dist.size()){
+            if (i==src)
+                dist[i]=0;
+            else {
+                dist[i]=std::numeric_limits<IDX_T>::max();
+            }
+            pred[i]=std::numeric_limits<IDX_T>::max();
+        }
+        FORI(i,0,(int)dist.size()) {
+            FORSZ(row,0,this->size()) {
+                FOREACH(col,this->at(row)){
+                    if (dist[row] + col->second < dist[col->first]){
+                        dist[col->first] = dist[row] + col->second;
+                        pred[col->first] = row;
+
+                    }
+                }
+            }
+        }
+
+        FORSZ(row,0,this->size()) {
+            FOREACH(col,this->at(row)){
+
+                if (dist[row] + col->second < dist[col->first] )
+                    throw std::runtime_error("Graph contains a negative-weight cycle");
+            }
+        }
+
     }
 };
 }
