@@ -1,5 +1,13 @@
+/**
+ * C++ Utility Library
+ * by Madura A.
+ * Placed on public domain, this is "do what ever you want with it code" with
+ * an additional statement for copyright. I do hold it and due credit is admired.
+ *
+ */
 #ifndef CPPUTILS_H
 #define CPPUTILS_H
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -14,8 +22,6 @@
 #include <cctype>
 #include <cstdio>
 #include <stdexcept>
-// Madura A.
-// C++ Utilities
 
 #ifdef _MSC_VER
 #define typeof(x) decltype(x)
@@ -141,10 +147,6 @@ public:
             (*i)->push_back(idx);
             idx++;
         }
-        FOREACH(i,*this){
-            cout<<*i<<"("<<(*i)->front()<<") ";
-        }
-        cout<<endl;
     }
     void merge(IDX_T a,IDX_T b){
 
