@@ -10,3 +10,6 @@ SOURCES += \
 HEADERS += \
     cpplib.h
 
+OTHER_FILES += \
+    readme.md
+
