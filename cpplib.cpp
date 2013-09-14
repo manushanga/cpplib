@@ -26,6 +26,11 @@ float from_string<float>(std::string number, float base)
     int radix=number.find('.');
     int i=number.length()-1;
 
+    if (base == 10) {
+        std::sscanf(number.c_str(),"%f",&final);
+        return final;
+    }
+
     if (radix!= std::string::npos){
         float power=pow(base,-1.0f*(number.length() -radix -1));
         while (i>=0)

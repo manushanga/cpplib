@@ -3,12 +3,23 @@
 
 #include <string>
 #include <vector>
+#include <set>
+#include <map>
 #include <cstring>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
 #include <cctype>
+#include <cstdio>
 // Madura A.
 // C++ Utilities
+
+/** General foreach for STL like containers */
+#define FOREACH(var, container) \
+    for(typeof((container).begin()) var = (container).begin(); \
+        var != (container).end(); \
+        ++var)
+
 // helpers
 namespace cpplib {
 inline int char_to_int(char c)
@@ -32,6 +43,9 @@ inline int char_to_int(char c)
 }
 }
 namespace std{
+
+/** String Functions  **/
+
 template<typename FROM>
 /** Convert to wstring from FROM type
  */
@@ -75,8 +89,68 @@ TO from_string(std::string number, TO base)
 {
     return (TO)0;
 }
+/** Graph structures and algorithms **/
+/*  NOTE: It is assumed that IDX_T and WGT_T are numeric primitives, like
+    int, long, size_t ..etc do not use float/double or any non-numeric type
+*/
 
+template<typename IDX_T, typename WGT_T>
+struct edge{
+    IDX_T a,b;
+    WGT_T w;
+    edge(){}
+    edge(IDX_T _a, IDX_T _b, WGT_T _w){
+        a=_a;b=_b;w=_w;
+    }
+};
 
+template<typename IDX_T, typename WGT_T>
+struct edge_comparator{
+    bool operator() (const edge<IDX_T, WGT_T>& a,const edge<IDX_T, WGT_T>& b)
+    {
+        return (a.w < b.w);
+    }
+};
+
+template<typename IDX_T, typename WGT_T>
+class edge_list : public vector< edge< IDX_T, WGT_T > >
+{
+public:
+    edge_list(){}
+    void add_edge(IDX_T a, IDX_T b, WGT_T w)
+    {
+        this->push_back(edge<IDX_T, WGT_T>(a,b,w));
+    }
+    void mst(){
+        edge_comparator<IDX_T, WGT_T> ec;
+        sort(this->begin(), this->end(), ec);
+    }
+};
+template<typename IDX_T, typename WGT_T>
+class adj_list : public vector< map<IDX_T,WGT_T> >
+{
+public:
+    adj_list(edge_list<IDX_T, WGT_T>& edgelist)
+    {
+        this->resize(edgelist.size());
+        FOREACH(i,edgelist) {
+            add_edge(i->a, i->b, i->w);
+        }
+    }
+    adj_list(IDX_T vertices)
+    {
+        this->resize(vertices);
+    }
+    void add_edge(IDX_T a, IDX_T b, WGT_T w)
+    {
+        this->at(a).insert(pair<IDX_T,WGT_T>(b,w));
+    }
+    bool is_edge(IDX_T a, IDX_T b)
+    {
+        map<IDX_T,WGT_T>& tt=this->at(a);
+        return tt.find(b)!=tt.end();
+    }
+};
 }
 
 #endif // CPPUTILS_H
