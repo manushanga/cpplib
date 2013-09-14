@@ -6,13 +6,19 @@ using namespace std;
 int main()
 {
 
-    std::edge_list<int,int> sa;
-    sa.add_edge(0,1,41);
-    sa.add_edge(1,2,1);
-    sa.add_edge(2,1,51);
-    sa.mst();
-    FOREACH (i,sa){
-        cout<<i->w<<endl;
+    std::edge_list<int,int> sa,kk;
+    sa.add_edge(0,1,4);
+    sa.add_edge(1,2,4);
+    sa.add_edge(1,4,2);
+    sa.add_edge(4,3,6);
+    sa.add_edge(2,3,2);
+    sa.add_edge(3,5,1);
+    sa.add_edge(5,0,8);
+
+
+    sa.mst(kk);
+    FOREACH (i,kk){
+        cout<<i->a<<" "<<i->b<<endl;
     }
     std::adj_list<int,int> ad(sa);
     ad.add_edge(0,5,0);

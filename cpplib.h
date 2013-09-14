@@ -1,6 +1,6 @@
 #ifndef CPPUTILS_H
 #define CPPUTILS_H
-
+#include <iostream>
 #include <string>
 #include <vector>
 #include <set>
@@ -8,13 +8,19 @@
 #include <cstring>
 #include <sstream>
 #include <cmath>
+#include <list>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
 // Madura A.
 // C++ Utilities
 
+#ifdef _MSC_VER
+#define typeof(x) decltype(x)
+#endif
+
 /** General foreach for STL like containers */
+
 #define FOREACH(var, container) \
     for(typeof((container).begin()) var = (container).begin(); \
         var != (container).end(); \
@@ -111,33 +117,86 @@ struct edge_comparator{
         return (a.w < b.w);
     }
 };
+template<typename IDX_T>
+class set_list : public vector < list< IDX_T > * >
+{
+private:
+    vector< list<IDX_T> > lists ;
+public:
+    set_list(IDX_T indexes): vector < list < IDX_T >* >(){
+        this->resize(indexes);
+        int idx=0;
+        FOREACH(i, *this){
+            *i=new list<IDX_T>;
+            (*i)->push_back(idx);
+            idx++;
+        }
+        FOREACH(i,*this){
+            cout<<*i<<"("<<(*i)->front()<<") ";
+        }
+        cout<<endl;
+    }
+    void merge(IDX_T a,IDX_T b){
 
+        list<IDX_T> *al=this->at(a);
+        list<IDX_T> *bl=this->at(b);
+        if (al->size() > bl->size()){
+            FOREACH(i,*bl) {
+                this->at( *i )=al;
+            }
+            al->splice(al->end(),*bl);
+        } else {
+
+            FOREACH(i,*al) {
+                this->at( *i )=bl;
+            }
+            bl->splice(bl->end(),*al);
+        }
+
+        FOREACH(i,*this){
+            cout<<*i<<"(";
+            FOREACH(j, *(*i)){
+                cout<<*j<<" ";
+            }
+            cout<<")";
+        }
+        cout<<endl;
+    }
+};
 template<typename IDX_T, typename WGT_T>
 class edge_list : public vector< edge< IDX_T, WGT_T > >
 {
 public:
-    edge_list(){}
+    edge_list() : vector< edge< IDX_T, WGT_T > >() {}
     void add_edge(IDX_T a, IDX_T b, WGT_T w)
     {
         this->push_back(edge<IDX_T, WGT_T>(a,b,w));
     }
-    void mst(){
+    void mst(edge_list< IDX_T, WGT_T >& mst){
+        set_list<IDX_T> sl(this->size());
         edge_comparator<IDX_T, WGT_T> ec;
         sort(this->begin(), this->end(), ec);
+        FOREACH (i, *this ) {
+            cout<<"j  "<<sl[i->a]<<" "<<sl[i->b]<<" "<< i->a <<","<< i->b <<endl;
+            if ( sl[i->a] != sl[i->b] ) {
+                mst.push_back(*i);
+                sl.merge(i->a, i->b);
+            }
+        }
     }
 };
 template<typename IDX_T, typename WGT_T>
 class adj_list : public vector< map<IDX_T,WGT_T> >
 {
 public:
-    adj_list(edge_list<IDX_T, WGT_T>& edgelist)
+    adj_list(edge_list<IDX_T, WGT_T>& edgelist) : vector< map<IDX_T,WGT_T> > ()
     {
         this->resize(edgelist.size());
         FOREACH(i,edgelist) {
             add_edge(i->a, i->b, i->w);
         }
     }
-    adj_list(IDX_T vertices)
+    adj_list(IDX_T vertices) : vector< map<IDX_T,WGT_T> > ()
     {
         this->resize(vertices);
     }
