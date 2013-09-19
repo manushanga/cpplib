@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <queue>
 #include <stdexcept>
 
 #ifdef _MSC_VER
@@ -113,7 +114,7 @@ TO from_string(std::string number, TO base)
 }
 /** Graph structures and algorithms **/
 /*  NOTE: IDX_T can be int,long ..etc
-    WGT_T can be int,long,float ..etc
+ *  WGT_T can be int,long,float ..etc
  */
 
 template<typename IDX_T, typename WGT_T>
@@ -220,6 +221,19 @@ public:
 template<typename IDX_T, typename WGT_T>
 class adj_list : public vector< map<IDX_T,WGT_T> >
 {
+    //template<typename IDX_T>
+    class vertice_comparator
+    {
+        vector<IDX_T> *dist;
+    public:
+        vertice_comparator(vector<IDX_T> *_dist){
+            dist = _dist;
+        }
+        bool operator() (const IDX_T& a, const IDX_T& b){
+            return dist->at(a) > dist->at(b);
+        }
+
+    };
 public:
     adj_list(edge_list<IDX_T, WGT_T>& edgelist) : vector< map<IDX_T,WGT_T> > ()
     {
@@ -252,13 +266,10 @@ public:
         dist.resize(this->size());
         pred.resize(this->size());
         FORI(i,0,dist.size()){
-            if (i==src)
-                dist[i]=0;
-            else {
-                dist[i]=std::numeric_limits<IDX_T>::max();
-            }
+            dist[i]=std::numeric_limits<IDX_T>::max();
             pred[i]=std::numeric_limits<IDX_T>::max();
         }
+        dist[src]=0;
         FORI(i,0,(int)dist.size()) {
             FORSZ(row,0,this->size()) {
                 FOREACH(col,this->at(row)){
@@ -280,7 +291,89 @@ public:
         }
 
     }
+
+    void dijkstra_shortest_path(IDX_T src,
+                                vector<IDX_T>& dist,
+                                vector<IDX_T>& pred){
+        vector<IDX_T> heap;
+        dist.resize(this->size());
+        pred.resize(this->size());
+        heap.resize(this->size());
+        FORI(i,0,dist.size()){
+            dist[i]=std::numeric_limits<IDX_T>::max();
+            pred[i]=std::numeric_limits<IDX_T>::max();
+            heap[i]=i;
+        }
+        dist[src]=0;
+
+        vertice_comparator vc(&dist);
+
+        make_heap(heap.begin(), heap.end(),vc);
+
+        while (!heap.empty()){
+            pop_heap(heap.begin(),heap.end(),vc);
+
+            IDX_T u=heap.back();
+            heap.pop_back();
+            if (dist[u]==numeric_limits<IDX_T>::max()) {
+                break;
+            }
+            FOREACH(i, this->at(u)) {
+                // i->first is index, i->second is weight
+                WGT_T w =dist[u]+ i->second;
+                if (w < dist[i->first]) {
+                    dist[i->first]=w;
+                    pred[i->first]=u;
+                    make_heap(heap.begin(),heap.end(),vc);
+                }
+            }
+        }
+
+    }
 };
+
+/** Longest Common Subsequence */
+/*  s1, s2 are sequence lengths
+ *  i, j are starting indexes, all indexing starts with 0
+ *  IDX_T - index type, SEQ_T - sequence type
+ *
+ *  MAKE SURE TO INITILIZE mem WITH MAX OF IDX_T
+ */
+template<typename IDX_T, typename SEQ_T, IDX_T s1, IDX_T s2>
+IDX_T lcs(IDX_T mem[s1][s2], SEQ_T *seq1, SEQ_T *seq2, IDX_T i, IDX_T j)
+{
+
+    IDX_T ret;
+    if (i==-1 || j==-1) {
+        ret = 0;
+    } else if (mem[i][j] != numeric_limits<IDX_T>::max()) {
+        return mem[i][j];
+    } else if (seq1[i] == seq2[j]){
+        ret=lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i-1,j-1)+1;
+    } else {
+        ret=max<IDX_T>(lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i,j-1) , lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i-1,j));
+    }
+    mem[i][j]=ret;
+    return ret;
+}
+template<typename IDX_T, typename SEQ_T, IDX_T s1, IDX_T s2>
+void lcs_trace(IDX_T mem[s1][s2], SEQ_T *seq1, SEQ_T *seq2, vector< SEQ_T >& trace, IDX_T i, IDX_T j )
+{
+    if (i==-1 || j==-1){
+        return;
+    } else if (seq1[i]==seq2[j]){
+        trace.push_back(seq1[i]);
+        lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i-1, j-1);
+
+    } else {
+        if (mem[i][j-1] > mem[i-1][j]) {
+            lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i, j-1);
+        } else {
+            lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i-1, j);
+        }
+
+    }
+}
 }
 
 #endif // CPPUTILS_H
