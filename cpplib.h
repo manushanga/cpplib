@@ -38,10 +38,17 @@
 #define FORSZ(x,i,j) \
     for(size_t x=i;x<j;x++)
 
+#if __cplusplus < 201103L
 #define FOREACH(var, container) \
     for(typeof((container).begin()) var = (container).begin(); \
         var != (container).end(); \
         ++var)
+#else
+#define FOREACH(var, container) \
+    for(auto var = (container).begin(); \
+        var != (container).end(); \
+        ++var)
+#endif
 
 // helpers
 namespace cpplib {
@@ -135,59 +142,54 @@ struct edge_comparator{
     }
 };
 template<typename IDX_T>
-class set_list : public vector < list< IDX_T > * >
-{
+class disjoint_set {
 private:
-    vector< list<IDX_T> > lists ;
+    vector<IDX_T> parents,ranks;
 public:
-    set_list(IDX_T indexes): vector < list < IDX_T >* >(){
-        this->resize(indexes);
-        int idx=0;
-        FOREACH(i, *this){
-            *i=new list<IDX_T>;
-            (*i)->push_back(idx);
-            idx++;
+    disjoint_set(IDX_T size) {
+        parents.resize(size);
+        ranks.resize(size);
+    }
+    void make(IDX_T idx) {
+        parents[idx]=idx;
+        ranks[idx]=0;
+    }
+    IDX_T find(IDX_T idx) {
+        while (parents[idx] != idx)
+        {
+            idx=parents[idx];
+        }
+        return idx;
+    }
+    void merge(IDX_T idx1, IDX_T idx2){
+        IDX_T idx1root=find(idx1);
+        IDX_T idx2root=find(idx2);
+
+        if (idx1root != idx2root){
+            if (ranks[idx1root] < ranks[idx2root]) {
+                parents[idx1root] = idx2root;
+            } else if (ranks[idx1root] > ranks[idx2root]) {
+                parents[idx2root] = idx1root;
+            } else {
+                parents[idx2root] = idx1root;
+                ranks[idx1root] = ranks[idx1root]+1;
+            }
         }
     }
-    void merge(IDX_T a,IDX_T b){
-
-        list<IDX_T> *al=this->at(a);
-        list<IDX_T> *bl=this->at(b);
-        if (al->size() > bl->size()){
-            FOREACH(i,*bl) {
-                this->at( *i )=al;
+    void get_sets(map< IDX_T, vector<IDX_T> >& rset){
+        FORI(i,0,parents.size())  {
+            int k=find(i);
+            if (rset.find(k)==rset.end()) {
+                vector<IDX_T> g;
+                g.push_back(i);
+                rset[k] = g;
+            } else {
+                rset[k].push_back(i);
             }
-            al->splice(al->end(),*bl);
-            delete bl;
-        } else {
-
-            FOREACH(i,*al) {
-                this->at( *i )=bl;
-            }
-            bl->splice(bl->end(),*al);
-            delete al;
-        }
-
-        FOREACH(i,*this){
-            cout<<*i<<"(";
-            FOREACH(j, *(*i)){
-                cout<<*j<<" ";
-            }
-            cout<<")";
-        }
-        cout<<endl;
-    }
-    ~set_list()
-    {
-        set<list <IDX_T> *> f;
-        FOREACH(i,*this){
-            f.insert(*i);
-        }
-        FOREACH(i, f){
-            delete *i;
         }
     }
 };
+
 template<typename IDX_T, typename WGT_T>
 class edge_list : public vector< edge< IDX_T, WGT_T > >
 {
@@ -206,14 +208,16 @@ public:
         return vertex_count;
     }
     void mst(edge_list< IDX_T, WGT_T >& mst){
-        set_list<IDX_T> sl(this->size());
+        disjoint_set<IDX_T> ds(this->size());
         edge_comparator<IDX_T, WGT_T> ec;
         sort(this->begin(), this->end(), ec);
-        FOREACH (i, *this ) {
-            cout<<"j  "<<sl[i->a]<<" "<<sl[i->b]<<" "<< i->a <<","<< i->b <<endl;
-            if ( sl[i->a] != sl[i->b] ) {
+        FORI (i, 0 , vertex_count) {
+            ds.make(i);
+        }
+        FOREACH (i, *this) {
+            if ( ds.find(i->a) != ds.find(i->b) ) {
                 mst.push_back(*i);
-                sl.merge(i->a, i->b);
+                ds.merge(i->a, i->b);
             }
         }
     }
