@@ -103,22 +103,87 @@ std::string to_lower(std::string str);
 	Uses isspace() to check for blanks
  */
 std::string trim(std::string str);
-/**
-	Splits a string by delim (char) and puts in the given vector
+/** Splits a string by delim (char) and puts in the given vector
   */
 void split(std::string str, char delim, std::vector<std::string>& strvec);
-/**
-	Splits a string by delim (c_str) and puts in the given vector
+/** Splits a string by delim (c_str) and puts in the given vector
   */
 void split(std::string str, char *delim, std::vector<std::string>& strvec);
 
 template<typename TO>
 /** TO=conversion type, 0 < base <= 16
  */
-TO from_string(std::string number, TO base)
-{
-    return (TO)0;
-}
+TO from_string(std::string number, TO base);
+
+/** Reversable(in O(1)) Doubly Linked List
+  *//*
+template<typename T>
+class reversable_list{
+public:
+    struct Node{
+        T data;
+        Node *next;
+        Node *prev;
+        Node(Node *_prev, T& _data, Node *_next): next(_next), prev(_prev), data(_data) {}
+    };
+private:
+
+    Node *front;
+    Node *back;
+    int direction;
+    int size;
+public:
+    reversable_list() : front(NULL), back(NULL), size(0), direction(1) {}
+    inline void toggle_direction(){
+        direction = 1-direction;
+    }
+    inline void push_back(const T& item){
+        if (direction)
+            push_back_real(item);
+        else
+            push_front_real(item);
+    }
+    inline void push_back(const T& item){
+        if (direction)
+            push_front_real(item);
+        else
+            push_back_real(item);
+    }
+private:
+    inline void push_back_real(const T& item)
+    {
+        Node *n;
+        n = new Node(back,item,NULL);
+
+        if (!front) {
+            front = n;
+        }
+        if (back) {
+            back->prev = n;
+        }
+        back = n;
+    }
+    inline void push_front_real(const T& item)
+    {
+        Node *n;
+        n = new Node(NULL,item,front);
+
+        if (!back) {
+            back = n;
+        }
+        if (front) {
+            front->prev = n;
+        }
+        front = n;
+    }
+    inline Node *next(Node *current) {
+        if (direction) { return current->next; } else { return current->prev; }
+    }
+    inline Node *previous(Node *current) {
+        if (direction) { return current->prev; } else { return current->next; }
+    }
+};
+*/
 /** Graph structures and algorithms **/
 /*  NOTE: IDX_T can be int,long ..etc
  *  WGT_T can be int,long,float ..etc
@@ -225,7 +290,7 @@ public:
 template<typename IDX_T, typename WGT_T>
 class adj_list : public vector< map<IDX_T,WGT_T> >
 {
-    //template<typename IDX_T>
+
     class vertice_comparator
     {
         vector<IDX_T> *dist;
@@ -238,6 +303,7 @@ class adj_list : public vector< map<IDX_T,WGT_T> >
         }
 
     };
+
 public:
     adj_list(edge_list<IDX_T, WGT_T>& edgelist) : vector< map<IDX_T,WGT_T> > ()
     {
@@ -262,6 +328,70 @@ public:
     {
         map<IDX_T,WGT_T>& tt=this->at(a);
         return tt.find(b)!=tt.end();
+    }
+    /* http://en.wikibooks.org/wiki/Algorithm_implementation/Graphs/Maximum_flow/Edmonds-Karp */
+    void max_network_flow(IDX_T src, IDX_T sink){
+
+    }
+    /** Set WGT_T to int to find Eulerian trail */
+    vector<IDX_T> eulerian_trail(IDX_T idx){
+        int total=0;
+        FORI(i,0, this->size()) {
+            FOREACH(j,this->at(i)) {
+                this->at(i)[j->first]=0;
+                total++;
+            }
+        }
+        int count=0;
+        int start_idx=idx;
+        list<IDX_T> ls;
+        typename list<IDX_T>::iterator current=ls.end();
+        while (count<total) {
+            map<IDX_T, WGT_T>& tt=this->at(idx);
+            bool found=false;
+            FOREACH(j,tt) {
+                if (j->second == 0) {
+                    ls.insert(current,idx);
+
+                    idx=j->first;
+
+                    tt[j->first]=1;
+                    count++;
+
+                    if (j->first != start_idx) {
+                        found=true;
+                    }
+                    break;
+                }
+
+            }
+
+            if (!found) {
+                list<int>::iterator i=ls.begin();
+                while (i!=ls.end()) {
+                    map<IDX_T, WGT_T>& tt=this->at(*i);
+                    bool found_free=false;
+                    FOREACH(j,tt) {
+                        if (j->second==0) {
+                            idx=*i;
+                            current=i;
+                            start_idx=idx;
+                            found_free=true;
+                            break;
+                        }
+                    }
+                    if (found_free)
+                        break;
+                    i++;
+                }
+
+            }
+        }
+        vector<IDX_T> vv;
+        FOREACH(j,ls) {
+            vv.push_back(*j);
+        }
+        return vv;
     }
     void bellmanford_shortest_path(IDX_T src,
                                    vector<IDX_T>& dist,

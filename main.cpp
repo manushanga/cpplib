@@ -6,6 +6,27 @@ using namespace std;
 
 int main()
 {
+    std::edge_list<int,int> sax(11);
+    sax.add_edge(0,1,0);
+    sax.add_edge(1,2,0);
+    sax.add_edge(2,3,0);
+    sax.add_edge(3,4,0);
+    sax.add_edge(4,0,0);
+
+    sax.add_edge(0,2,0);
+    sax.add_edge(2,5,0);
+    sax.add_edge(5,0,0);
+
+    sax.add_edge(1,4,0);
+    sax.add_edge(4,5,0);
+    sax.add_edge(5,1,0);
+
+    std::adj_list<int,int> adx(sax);
+    auto xx=adx.eulerian_trail(0);
+    FOREACH(x,xx) {
+        cout<<*x<<endl;
+    }
+    cout<<"--"<<endl;
     int mem[5][5];
     FORI(i,0,5){
         FORI(j,0,5){
