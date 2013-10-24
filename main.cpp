@@ -27,18 +27,23 @@ int main()
         cout<<*x<<endl;
     }
     cout<<"--"<<endl;
-    int mem[5][5];
-    FORI(i,0,5){
-        FORI(j,0,5){
-            mem[i][j]=std::numeric_limits<int>::max();
-        }
-    }
+
 
     char g[]="abcde";
     char f[]="adeac";
+    Mat<int> a(5,5 );
+
+    std::lcs_init<char>(a);
     std::vector<char> ll;
-    std::cout<<std::lcs<int, char, 5, 5>(mem,g,f,4,4)<<std::endl;
-    std::lcs_trace<int, char, 5, 5>(mem,g,f,ll,4,4);
+    std::cout<<std::lcs<char>(a,g,f,4,4)<<std::endl;
+
+    FORI(i,0,5){
+        FORI(j,0,5) {
+            cout<<a.at(i,j)<<" ";
+        }
+        cout<<endl;
+    }
+    std::lcs_trace<char>(a,g,f,ll,4,4);
     FOREACH (i,ll){
         std::cout<<*i<<std::endl;
     }

@@ -22,7 +22,7 @@
 #include <cctype>
 #include <cstdio>
 #include <queue>
-#include <stdexcept>
+#include <cassert>
 
 #ifdef _MSC_VER
 #define typeof(x) decltype(x)
@@ -114,7 +114,9 @@ template<typename TO>
 /** TO=conversion type, 0 < base <= 16
  */
 TO from_string(std::string number, TO base);
-
+// following is not tested it was written thinking it'd be needed but it wasn't
+// needed in the end but it is left here if anyone wants to make use of it, you
+// have been warned this is *very* untested code
 /** Reversable(in O(1)) Doubly Linked List
   *//*
 template<typename T>
@@ -184,6 +186,31 @@ private:
     }
 };
 */
+/** Mat 2D and 3D */
+/* Matrix type for common 2D and 3D data use this instead of 2D/3D arrays
+ * this is much easier to move around from function to function ..etc
+ */
+
+template<typename MAT_T>
+struct Mat : public vector< MAT_T > {
+    int sx,sy,sz;
+    Mat(int x, int y) : sx(x), sy(y) ,sz(0) {
+        vector< MAT_T >::resize(x*y);
+    }
+    Mat(int x, int y, int z) : sx(x), sy(y), sz(z) {
+        vector< MAT_T >::resize(x*y*z);
+    }
+    typename vector<MAT_T>::reference at(int x, int y){
+        assert(y<sy && x<sx);
+        return vector<MAT_T>::at(sy*x+y);
+    }
+    typename vector<MAT_T>::reference at(int x,int y, int z) {
+        assert(z<sz && y<sy && x<sx);
+        return vector<MAT_T>::at(sy*sz*x + sz*y + z);
+    }
+};
+
+
 /** Graph structures and algorithms **/
 /*  NOTE: IDX_T can be int,long ..etc
  *  WGT_T can be int,long,float ..etc
@@ -330,10 +357,14 @@ public:
         return tt.find(b)!=tt.end();
     }
     /* http://en.wikibooks.org/wiki/Algorithm_implementation/Graphs/Maximum_flow/Edmonds-Karp */
+    // convert that up :)
     void max_network_flow(IDX_T src, IDX_T sink){
 
     }
     /** Set WGT_T to int to find Eulerian trail */
+    /*  See the wikipedia's article on eulerian path to see how this works
+     *  I have implemented the algorithm that is listed last
+     */
     vector<IDX_T> eulerian_trail(IDX_T idx){
         int total=0;
         FORI(i,0, this->size()) {
@@ -420,7 +451,7 @@ public:
             FOREACH(col,this->at(row)){
 
                 if (dist[row] + col->second < dist[col->first] )
-                    throw std::runtime_error("Graph contains a negative-weight cycle");
+                    cout<<("Graph contains a negative-weight cycle")<<endl;
             }
         }
 
@@ -466,47 +497,60 @@ public:
     }
 };
 
+
 /** Longest Common Subsequence */
-/*  s1, s2 are sequence lengths
- *  i, j are starting indexes, all indexing starts with 0
- *  IDX_T - index type, SEQ_T - sequence type
- *
- *  MAKE SURE TO INITILIZE mem WITH MAX OF IDX_T
- */
-template<typename IDX_T, typename SEQ_T, IDX_T s1, IDX_T s2>
-IDX_T lcs(IDX_T mem[s1][s2], SEQ_T *seq1, SEQ_T *seq2, IDX_T i, IDX_T j)
+/* s1, s2 are sequence lengths
+* i, j are starting indexes you should start from the end of both strings
+* all indexing starts with 0
+* SEQ_T - sequence type
+*
+* Use the lcs_init function to initialize the Mat before calling lcs
+* You can only call lcs_trace on a Mat that already has been gone through with lcs
+*/
+
+template<typename SEQ_T>
+void lcs_init(Mat<int>& mem) {
+    FORI(i,0,mem.sx) {
+        FORI(j,0,mem.sy){
+            mem.at(i,j)=numeric_limits<int>::max();
+        }
+    }
+}
+
+template<typename SEQ_T>
+int lcs(Mat<int>& mem, SEQ_T *seq1, SEQ_T *seq2, int i, int j)
+{
+    if (i==-1 || j==-1) {
+        return 0;
+    } else if (mem.at(i,j) != numeric_limits<int>::max()) {
+        return mem.at(i,j);
+    } else if (seq1[i] == seq2[j]){
+        mem.at(i,j)=lcs<SEQ_T>(mem,seq1,seq2,i-1,j-1)+1;
+        return mem.at(i,j);
+    } else {
+        mem.at(i,j)=max<int>(lcs<SEQ_T>(mem,seq1,seq2,i,j-1) , lcs<SEQ_T>(mem,seq1,seq2,i-1,j));
+        return mem.at(i,j);
+    }
+}
+
+template<typename SEQ_T>
+void lcs_trace(Mat<int>& mem, SEQ_T *seq1, SEQ_T *seq2, vector< SEQ_T >& trace, int i, int j )
 {
 
-    IDX_T ret;
-    if (i==-1 || j==-1) {
-        ret = 0;
-    } else if (mem[i][j] != numeric_limits<IDX_T>::max()) {
-        return mem[i][j];
-    } else if (seq1[i] == seq2[j]){
-        ret=lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i-1,j-1)+1;
-    } else {
-        ret=max<IDX_T>(lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i,j-1) , lcs<IDX_T, SEQ_T, s1, s2>(mem,seq1,seq2,i-1,j));
-    }
-    mem[i][j]=ret;
-    return ret;
-}
-template<typename IDX_T, typename SEQ_T, IDX_T s1, IDX_T s2>
-void lcs_trace(IDX_T mem[s1][s2], SEQ_T *seq1, SEQ_T *seq2, vector< SEQ_T >& trace, IDX_T i, IDX_T j )
-{
     if (i==-1 || j==-1){
         return;
     } else if (seq1[i]==seq2[j]){
         trace.push_back(seq1[i]);
-        lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i-1, j-1);
-
+        lcs_trace<SEQ_T>(mem, seq1, seq2, trace, i-1, j-1);
     } else {
-        if (mem[i][j-1] > mem[i-1][j]) {
-            lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i, j-1);
-        } else {
-            lcs_trace<IDX_T, SEQ_T, s1, s2>(mem, seq1, seq2, trace, i-1, j);
-        }
 
+        if (mem.at(i,j-1) > mem.at(i-1,j)) {
+            lcs_trace<SEQ_T>(mem, seq1, seq2, trace, i, j-1);
+        } else {
+            lcs_trace<SEQ_T>(mem, seq1, seq2, trace, i-1, j);
+        }
     }
+
 }
 }
 
